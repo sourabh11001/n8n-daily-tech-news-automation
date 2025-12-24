@@ -1,0 +1,162 @@
+{
+  "name": "NEWS_AUTOMATION",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 13
+            },
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0],
+      "id": "9a3a3eab-bc1e-4cf5-8251-1461ce5be013",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b08adb6d-1fa4-4a9e-96dd-cf7c4061cb89",
+              "name": "rss",
+              "value": "[ \"https://techcrunch.com/feed/\", \"https://www.engadget.com/rss.xml\", \"https://www.wired.com/feed/rss\"]",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [208, 0],
+      "id": "b85ee7d4-0ebe-41e9-a038-7d50320c9c97",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "rss",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [416, 0],
+      "id": "357062b5-6763-4ab3-938d-c36d59ff6a59",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.rss }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [624, 0],
+      "id": "ef4bff0b-f7de-4c16-9ae4-436782734601",
+      "name": "RSS Read"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "contentSnippet"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [832, 0],
+      "id": "b1845375-ed74-4297-bfc6-6d4b6cfd6258",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Summarize news",
+        "options": {
+          "systemMessage": "=only grab the news from the past 24-hours. Act as a tech news aggregator and write in plain, easy-to-understand, English with no tech jargon. \nHere is the list of news:\n{{ $json.contentSnippet }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [1040, 0],
+      "id": "0a3847d8-4ac3-47c7-8322-cab4ad6d9cd2",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [912, 208],
+      "id": "19056fda-6bcb-49b6-b058-9169c89448fb",
+      "name": "Google Gemini Chat Model"
+    },
+    {
+      "parameters": {
+        "mode": "markdownToHtml",
+        "markdown": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [1392, 0],
+      "id": "9fb6c61a-ce97-4380-8b98-fdd183bf7af0",
+      "name": "Markdown"
+    },
+    {
+      "parameters": {
+        "sendTo": "your_email@example.com",
+        "subject": "DAILY TECH NEWS",
+        "message": "={{ $json.data }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [1600, 0],
+      "id": "8cac0028-5690-4fb6-ad8b-2e0ec5a9020b",
+      "name": "Send a message"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [[{ "node": "Edit Fields", "type": "main", "index": 0 }]]
+    },
+    "Edit Fields": {
+      "main": [[{ "node": "Split Out", "type": "main", "index": 0 }]]
+    },
+    "Split Out": {
+      "main": [[{ "node": "RSS Read", "type": "main", "index": 0 }]]
+    },
+    "RSS Read": {
+      "main": [[{ "node": "Aggregate", "type": "main", "index": 0 }]]
+    },
+    "Aggregate": {
+      "main": [[{ "node": "AI Agent", "type": "main", "index": 0 }]]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [[{ "node": "AI Agent", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "AI Agent": {
+      "main": [[{ "node": "Markdown", "type": "main", "index": 0 }]]
+    },
+    "Markdown": {
+      "main": [[{ "node": "Send a message", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
+
